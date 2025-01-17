@@ -6,6 +6,7 @@ import com.nobilgautam.journalApplication.repository.JournalEntryRepository;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,12 +20,18 @@ public class JournalEntryService {
     @Autowired
     public UserService userService;
 
+    @Transactional
     public void saveEntry(JournalEntry journalEntry, String username) {
-        User user = userService.getEntryByUsername(username);
-        journalEntry.setDate(LocalDateTime.now());
-        JournalEntry savedEntry = journalEntryRepository.save(journalEntry);
-        user.getJournalEntries().add(savedEntry);
-        userService.saveEntry(user);
+        try {
+            User user = userService.getEntryByUsername(username);
+            journalEntry.setDate(LocalDateTime.now());
+            JournalEntry savedEntry = journalEntryRepository.save(journalEntry);
+            user.getJournalEntries().add(savedEntry);
+            userService.saveUser(user);
+        } catch (Exception e) {
+            System.out.println(e);
+            throw new RuntimeException("An error occurred while saving the entry", e);
+        }
     }
 
     public void saveEntry(JournalEntry journalEntry) {
@@ -39,10 +46,23 @@ public class JournalEntryService {
         return journalEntryRepository.findById(id);
     }
 
+    @Transactional
     public void deleteEntryById(ObjectId id, String username) {
+        try {
+            User user = userService.getEntryByUsername(username);
+            boolean removed = user.getJournalEntries().removeIf(x -> x.getId().equals(id));
+            if (removed) {
+                userService.saveUser(user);
+                journalEntryRepository.deleteById(id);
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+            throw new RuntimeException("An error occurred while deleting the entry", e);
+        }
+    }
+
+    public List<JournalEntry> findByUsername(String username) {
         User user = userService.getEntryByUsername(username);
-        user.getJournalEntries().removeIf(x -> x.getId().equals(id));
-        userService.saveEntry(user);
-        journalEntryRepository.deleteById(id);
+        return user.getJournalEntries();
     }
 }
