@@ -28,4 +28,18 @@ public class PublicController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<String> loginUser(@RequestBody User user) {
+        try {
+            boolean isAuthenticated = userService.authenticateUser(user);
+            if (isAuthenticated) {
+                return new ResponseEntity<>("Login successful from backend", HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("Invalid credentials from backend", HttpStatus.UNAUTHORIZED);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

@@ -25,6 +25,14 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public boolean authenticateUser(User user) {
+        User optionalUser = userRepository.findByUsername(user.getUsername());
+        if (optionalUser != null) {
+            return passwordEncoder.matches(user.getPassword(), optionalUser.getPassword());
+        }
+        return false;
+    }
+
     public void saveNewAdmin(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRoles(Arrays.asList("USER", "ADMIN"));
